@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Smart AI Assistant</title>
+    <style>
+        body {
+            background: #1e3c47;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: Arial, sans-serif;
+        }
+
+        .chat-container {
+            width: 350px;
+            height: 550px;
+            background: black;
+            border-radius: 20px;
+            box-shadow: 0 0 20px cyan;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .header {
+            background: black;
+            color: cyan;
+            text-align: center;
+            padding: 15px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .messages {
+            flex: 1;
+            padding: 10px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .message {
+            padding: 8px 12px;
+            margin: 5px 0;
+            border-radius: 10px;
+            max-width: 75%;
+            word-wrap: break-word;
+        }
+
+        .user {
+            background: cyan;
+            color: black;
+            align-self: flex-end;
+        }
+
+        .bot {
+            background: #333;
+            color: white;
+            align-self: flex-start;
+        }
+
+        .input-area {
+            display: flex;
+            padding: 10px;
+            background: #111;
+        }
+
+        .input-area input {
+            flex: 1;
+            padding: 8px;
+            border-radius: 20px;
+            border: none;
+            outline: none;
+        }
+
+        .input-area button {
+            margin-left: 5px;
+            padding: 8px 15px;
+            border-radius: 50%;
+            border: none;
+            background: cyan;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<div class="chat-container">
+    <div class="header">🤖 Smart AI Assistant</div>
+    <div class="messages" id="messages"></div>
+
+    <div class="input-area">
+        <input type="text" id="userInput" placeholder="Type message..." />
+        <button onclick="sendMessage()">➤</button>
+    </div>
+</div>
+
+<script>
+    const messages = document.getElementById("messages");
+
+    function addMessage(text, sender) {
+        const msg = document.createElement("div");
+        msg.classList.add("message", sender);
+        msg.textContent = text;
+        messages.appendChild(msg);
+        messages.scrollTop = messages.scrollHeight;
+    }
+
+    async function getAIResponse(input) {
+        const response = await fetch("/chat", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ message: input })
+        });
+
+        const data = await response.json();
+        return data.reply;   // ✅ FIXED HERE
+    }
+
+    function sendMessage() {
+        const input = document.getElementById("userInput");
+        const text = input.value.trim();
+        if (text === "") return;
+
+        addMessage(text, "user");
+        input.value = "";
+
+        const typingMsg = document.createElement("div");
+        typingMsg.classList.add("message", "bot");
+        typingMsg.textContent = "Typing...";
+        messages.appendChild(typingMsg);
+        messages.scrollTop = messages.scrollHeight;
+
+        getAIResponse(text)
+            .then(response => {
+                messages.removeChild(typingMsg);
+                addMessage(response, "bot");
+            })
+            .catch(error => {
+                messages.removeChild(typingMsg);
+                addMessage("Error connecting to server", "bot");
+                console.error(error);
+            });
+    }
+
+    // Press Enter to send message
+    document.getElementById("userInput").addEventListener("keypress", function(e) {
+        if (e.key === "Enter") {
+            sendMessage();
+        }
+    });
+</script>
+
+</body>
+</html>
